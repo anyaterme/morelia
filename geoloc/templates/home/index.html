@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		    <title>Mapa de Morelia</title>           
+			<!--
+			<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/style.css" media="screen" />
+			-->
+			<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		    <style type="text/css">
+      			html, body { height: 100%; margin: 0; padding: 0; }
+	        	#map { height: 100%; }
+			</style>
+	</head>
+	<body>
+		<div id="map"></div>
+		<script type="text/javascript">
+			var map;
+			var infowindow = null;
+
+			function initMap() 
+			{
+				var features = [];
+				if (infowindow == null)
+					infowindow = new google.maps.InfoWindow();
+				map = new google.maps.Map(document.getElementById('map'), { center: {lng: -101.193445, lat: 19.702716}, zoom: 13 });
+				google.maps.event.addListener(map,'click',function() 
+				{
+					infowindow.close();
+				});
+				map.data.setStyle({fillOpacity:.8});
+
+				var featureId = 0;
+				google.maps.event.addListener(map.data,'addfeature',function(e)
+				{
+					if(e.feature.getGeometry().getType()==='Polygon')
+					{
+						features.push(e.feature);
+						var bounds=new google.maps.LatLngBounds();
+						e.feature.getGeometry().getArray().forEach(function(path)
+						{
+							path.getArray().forEach(function(latLng){bounds.extend(latLng);})
+						});
+						e.feature.setProperty('bounds',bounds);
+						e.feature.setProperty('featureNum',features.length-1);
+					}
+				});
+				map.data.addListener('click', function(event) 
+				{
+					var myHTML = event.feature.getProperty("description");
+					var myName = event.feature.getProperty("name");
+					infowindow.setContent("<div style='width:150px; text-align: center;'><h1>"+myName+"</h1><p>"+myHTML+"</p></div>");
+					infowindow.setPosition(event.feature.getGeometry().get());
+					infowindow.setOptions({pixelOffset: new google.maps.Size(0,-30)});
+					infowindow.open(map);
+				});    
+
+				map.data.loadGeoJson('static/data.json');
+		   	}
+		</script>
+
+		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDop_cwicTofxP48a1YrtCWIL0KwaVOuTc&callback=initMap"> </script>
+	</body>
+</html>
